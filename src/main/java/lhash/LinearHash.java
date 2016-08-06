@@ -11,14 +11,12 @@ public class LinearHash {
      * Block manager instance
      */
     private final BlockManager blk_mgr;
-    /**
-     * Debug state
-     */
-    private boolean DEBUG_FLAG = false;
+
     /**
      * Configuration instance
      */
     private LinearHashConfiguration lin_conf;
+
     /**
      * Properties
      */
@@ -186,7 +184,7 @@ public class LinearHash {
         splitBlockPtr++;
         int blk_ent[] = blk_mgr.fetchBlock(blk_num);
 
-        if (DEBUG_FLAG) {
+        if (lin_conf.isDebugEnabled()) {
             System.err.println("Splitting block: " + blk_num);
         }
 
@@ -221,7 +219,7 @@ public class LinearHash {
         // calculate merge index
         mblk_idx = (visible_pool - 1) + blk_num;
 
-        if (DEBUG_FLAG) {
+        if (lin_conf.isDebugEnabled()) {
             System.err.println("Merging block!");
         }
 
@@ -256,7 +254,7 @@ public class LinearHash {
      */
     private void moveKey(int val, int d_blk) throws IOException {
         int c_idx = hf(val);
-        if (DEBUG_FLAG) {
+        if (lin_conf.isDebugEnabled()) {
             System.out.println("delete block is: " + d_blk +
                     " Insert block is: " + c_idx + " key is: " + val);
         }
