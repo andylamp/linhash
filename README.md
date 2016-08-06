@@ -4,7 +4,8 @@
 
 This is a reference implementation of Litwin's [[1]] Linear hashing algorithm; this was a part of my VFS 
 File System project that I did a while back; after some requests I decided to polish the sources and make it
-available online (in three separate projects: [B+Tree][2], [Linear Hashing][3] and Dynamic Hashing). This package meets the following requirements:
+available online (in three separate projects: [B+Tree][2], [Linear Hashing][3] and Dynamic Hashing). This 
+package meets the following requirements:
 
  * Purely disk based
  * Uses strict paging sizes
@@ -75,7 +76,7 @@ You can also so dome error checking, as a null value is returned in
 case of search failure as such:
 
 ```java
-int ret;
+Integer ret;
 if((ret = slh.fetchKey(s)) == null) {
     // handle error
 } else {
