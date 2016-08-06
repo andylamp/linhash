@@ -1,3 +1,4 @@
+![build logo](https://travis-ci.org/andylamp/linhash.svg?branch=master)
 # Purely *On-Disk* Linear Hashing
 
 
