@@ -9,22 +9,26 @@ class LinearHashConfiguration {
     /* hash statistics */
     private final int init_pool;    // initial visible_pool size
     private final float bf_insert;  // balancing factor for insertions
-    private final float bf_delete;    // balancing factor for deletions
+    private final float bf_delete;  // balancing factor for deletions
     /* Default values */
-    private final int defaultKeysPerPage = 64;        // default keys per page value
-    private final int initial_blk_mgr_pool_size = 32;// default block pool size
-    private final int keyByteSize = 4;                // handling only integers
-    private final int defaultTickThresh = 100;        // per 100 ticks reset.
-    private final String fileMode = "rw";            // default mode R/W
+    private final int defaultKeysPerPage = 64;          // default keys per page value
+    private final int initial_blk_mgr_pool_size = 32;   // default block pool size
+    private final int keyByteSize = 4;                  // handling only integers
+    private final int defaultTickThresh = 100;          // per 100 ticks reset.
+    private final String fileMode = "rw";               // default mode R/W
     private final int blk_hoffset = 2 * keyByteSize;    // header offset for each block (2 * base key size)
+
+
     /**
      * Block manager configuration
      */
 
     /* Properties */
-    private final int keysPerBlock;    // keys per block
-    private final int bytesPerBlock;    // bytes per block
-    private final String blk_fname;    // filename of the block storage
+    private final int keysPerBlock; // keys per block
+    private final int bytesPerBlock;// bytes per block
+    private final String blk_fname; // filename of the block storage
+
+
     /**
      * Hash configuration
      */
@@ -35,9 +39,15 @@ class LinearHashConfiguration {
     /* Track performance */
     private boolean TRACK_PERF = true;
     /* tick threshold (for epochs) */
-    private int tick_thresh;        // tick reset threshold.
-    private boolean overrideFileFlag = true;        // override file by default.
+    private int tick_thresh;
+    /* file override flag */
+    private boolean overrideFileFlag = true;
 
+    /**
+     * Default constructor for {@link LinearHashConfiguration}
+     *
+     * @param blk_fname file which the keys will be stored.
+     */
     LinearHashConfiguration(String blk_fname) {
 
         this.blk_fname = blk_fname;
@@ -49,10 +59,21 @@ class LinearHashConfiguration {
 
         /* block mgr parameters */
         this.keysPerBlock = defaultKeysPerPage;
-        bytesPerBlock = calculateBlockBytesize(keyByteSize, keysPerBlock);
+        bytesPerBlock = calculateBlockByteSize(keyByteSize, keysPerBlock);
         this.tick_thresh = defaultTickThresh;
     }
 
+    /**
+     * Custom constructor for {@link LinearHashConfiguration}
+     *
+     * @param blk_fname        file which the keys will be stored.
+     * @param keysPerBlock     keys allowed per block.
+     * @param init_pool        initial pool size.
+     * @param insert_bf        inserts balance factor
+     * @param delete_bf        deletes balance factor
+     * @param overrideFileFlag override file flag
+     * @param epoch_thresh     epoch ticks
+     */
     LinearHashConfiguration(String blk_fname,
                             int keysPerBlock, int init_pool,
                             float insert_bf, float delete_bf,
@@ -67,7 +88,7 @@ class LinearHashConfiguration {
 
         /* block manager parameters */
         this.keysPerBlock = keysPerBlock;
-        this.bytesPerBlock = calculateBlockBytesize(keyByteSize, keysPerBlock);
+        this.bytesPerBlock = calculateBlockByteSize(keyByteSize, keysPerBlock);
 
         this.tick_thresh = epoch_thresh;
     }
@@ -96,7 +117,7 @@ class LinearHashConfiguration {
      *
      * @return return the balance factor for inserts
      */
-    float getBalanceFacotorForInserts() {
+    float getBalanceFactorForInserts() {
         return bf_insert;
     }
 
@@ -149,7 +170,7 @@ class LinearHashConfiguration {
      * @param keysPerBlock stored keys per each block.
      * @return the block size in bytes.
      */
-    private int calculateBlockBytesize(int byteSize, int keysPerBlock) {
+    private int calculateBlockByteSize(int byteSize, int keysPerBlock) {
         return ((byteSize * keysPerBlock) + blk_hoffset);
     }
 

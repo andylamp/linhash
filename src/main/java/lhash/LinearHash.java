@@ -20,7 +20,7 @@ public class LinearHash {
     /**
      * Properties
      */
-    private int splitBlockPtr = 0;            // split block pointer
+    private int splitBlockPtr = 0;           // split block pointer
     private int visible_pool = 0;            // visible_pool size
 
     /**
@@ -107,7 +107,7 @@ public class LinearHash {
             return false;
         }
         // now let's check if we need to split anything
-        while (blk_mgr.getBlockLF() > lin_conf.getBalanceFacotorForInserts()) {
+        while (blk_mgr.getBlockLF() > lin_conf.getBalanceFactorForInserts()) {
             splitBlock(splitBlockPtr);
         }
         // issue a tick
@@ -214,8 +214,8 @@ public class LinearHash {
      * @throws IOException is thrown then there is an I/O error during the operation.
      */
     private void mergeBlock(int blk_num) throws IOException {
-        int mblk_idx,    // merge block index
-                blk_ent[];    // block entries
+        int mblk_idx,       // merge block index
+                blk_ent[];  // block entries
         // calculate merge index
         mblk_idx = (visible_pool - 1) + blk_num;
 

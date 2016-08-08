@@ -12,17 +12,16 @@ class BlockManager {
      * Properties
      */
 
-    private int poolSize;        // size of our block pool (actual number of discrete blocks)
-    private int ovf_blocks;        // current overflow blocks
+    private int poolSize;       // size of our block pool (actual number of discrete blocks)
+    private int ovf_blocks;     // current overflow blocks
 
-    /* these stay */
-    private long initFileSize;    // initial file size
-    private long curFileSize;    // current file size
+    private long initFileSize;  // initial file size
+    private long curFileSize;   // current file size
 
-    private int key_num;            // total stored key number
+    private int key_num;        // total stored key number
 
-    private LinearHashConfiguration lin_conf;    // configuration instance.
-    private LinearHashPerfLog lin_perf;            // performance tracker instance.
+    private LinearHashConfiguration lin_conf;   // configuration instance.
+    private LinearHashPerfLog lin_perf;         // performance tracker instance.
 
     private RandomAccessFile blk_file;
 
@@ -78,6 +77,22 @@ class BlockManager {
         // update file length
         initFileSize = blk_file.length();
         return (initFileSize);
+    }
+
+    /**
+     * Writes the configuration to the file header
+     */
+    private void writeFileHeader() {
+
+    }
+
+    /**
+     * Reads the header from a pre-existing file
+     *
+     * @return true if header was parsed successfully, false if not.
+     */
+    private boolean readFileHeader() {
+        return true;
     }
 
     /**
