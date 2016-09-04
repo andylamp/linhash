@@ -56,7 +56,7 @@ public class LHashTest {
     /**
      * Test using different settings for load factors as well as a
      * random key load.
-     * <p>
+     *
      * REMEMBER *only* unique keys are allowed.
      *
      * @throws Exception is thrown when an I/O error is detected.

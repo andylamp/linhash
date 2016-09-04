@@ -20,8 +20,8 @@ public class LinearHash {
     /**
      * Properties
      */
-    private int splitBlockPtr = 0;           // split block pointer
-    private int visible_pool = 0;            // visible_pool size
+    private int splitBlockPtr = 0;  // split block pointer
+    private int visible_pool = 0;   // visible_pool size
 
     /**
      * Constructor that uses the default values for everything
@@ -101,9 +101,9 @@ public class LinearHash {
      */
     public boolean insertKey(int val) throws IOException {
         // get the index
-        int blk_idx = hf(val);
+        int block_index = hf(val);
         // insert it
-        if (blk_mgr.insertKey(val, blk_idx) == null) {
+        if (blk_mgr.insertKey(val, block_index) == null) {
             return false;
         }
         // now let's check if we need to split anything
@@ -124,9 +124,9 @@ public class LinearHash {
      */
     public Integer fetchKey(int val) throws IOException {
         // get the index
-        int blk_idx = hf(val);
+        int block_index = hf(val);
         // try to fetch the value
-        Integer res = blk_mgr.fetchKey(val, blk_idx);
+        Integer res = blk_mgr.fetchKey(val, block_index);
         // issue a tick
         blk_mgr.tick();
         if (res == null) {
@@ -143,9 +143,9 @@ public class LinearHash {
      */
     public boolean deleteKey(int val) throws IOException {
         // get the index
-        int blk_idx = hf(val);
+        int block_index = hf(val);
         // delete it
-        boolean ret = blk_mgr.deleteKey(val, blk_idx);
+        boolean ret = blk_mgr.deleteKey(val, block_index);
         // check if we need to merge something
         while (blk_mgr.getBlockLF() < lin_conf.getBalanceFactorForDeletes() &&
                 !((visible_pool == lin_conf.getInitialVisiblePoolSize()) &&
@@ -163,12 +163,12 @@ public class LinearHash {
      * @return the mapped value based on our hash function.
      */
     private int hf(int val) {
-        int blk_idx = Math.abs(val % visible_pool);
+        int block_index = Math.abs(val % visible_pool);
         // check if we need to use more hash function bits
-        if (blk_idx < splitBlockPtr) {
-            blk_idx = Math.abs(val % (2 * visible_pool));
+        if (block_index < splitBlockPtr) {
+            block_index = Math.abs(val % (2 * visible_pool));
         }
-        return (blk_idx);
+        return (block_index);
     }
 
     /**
@@ -178,7 +178,7 @@ public class LinearHash {
      * @throws IOException is thrown when there is an I/O error during the operation.
      */
     private void splitBlock(int blk_num) throws IOException {
-        int cblk_idx;
+        int cur_block_index;
         // we need to add a block
         blk_mgr.addBlock();
         splitBlockPtr++;
@@ -191,9 +191,9 @@ public class LinearHash {
         // perform such actions only if we received some elements!
         if (blk_ent != null) {
             for (int aBlk_ent : blk_ent) {
-                cblk_idx = hf(aBlk_ent);
+                cur_block_index = hf(aBlk_ent);
                 // check if we need to move the key
-                if (cblk_idx > blk_num)
+                if (cur_block_index > blk_num)
                 // move the key to the split block
                 {
                     moveKey(aBlk_ent, blk_num);
@@ -214,10 +214,10 @@ public class LinearHash {
      * @throws IOException is thrown then there is an I/O error during the operation.
      */
     private void mergeBlock(int blk_num) throws IOException {
-        int mblk_idx,       // merge block index
-                blk_ent[];  // block entries
+        int merge_block_index,  // merge block index
+                block_entries[];    // block entries
         // calculate merge index
-        mblk_idx = (visible_pool - 1) + blk_num;
+        merge_block_index = (visible_pool - 1) + blk_num;
 
         if (lin_conf.isDebugEnabled()) {
             System.err.println("Merging block!");
@@ -234,11 +234,11 @@ public class LinearHash {
         }
 
         // get the block contents
-        blk_ent = blk_mgr.fetchBlock(mblk_idx);
-        if (blk_ent != null) {
+        block_entries = blk_mgr.fetchBlock(merge_block_index);
+        if (block_entries != null) {
             // move keys
-            for (int aBlk_ent : blk_ent) {
-                moveKey(aBlk_ent, mblk_idx);
+            for (int aBlk_ent : block_entries) {
+                moveKey(aBlk_ent, merge_block_index);
             }
         }
         // delete the block
@@ -253,12 +253,12 @@ public class LinearHash {
      * @throws IOException is thrown when there is an I/O error during the operation.
      */
     private void moveKey(int val, int d_blk) throws IOException {
-        int c_idx = hf(val);
+        int current_index = hf(val);
         if (lin_conf.isDebugEnabled()) {
             System.out.println("delete block is: " + d_blk +
-                    " Insert block is: " + c_idx + " key is: " + val);
+                    " Insert block is: " + current_index + " key is: " + val);
         }
-        blk_mgr.insertKey(val, c_idx);
+        blk_mgr.insertKey(val, current_index);
         blk_mgr.deleteKey(val, d_blk);
     }
 

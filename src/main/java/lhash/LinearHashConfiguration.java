@@ -1,15 +1,15 @@
 package lhash;
 
+import java.io.IOException;
+import java.io.RandomAccessFile;
+
 @SuppressWarnings("unused")
 class LinearHashConfiguration {
 
     private final int defaultVisiblePoolSize = 16;
     private final float defaultInsertionsBF = 0.8f;
     private final float defaultDeletionsBF = 0.5f;
-    /* hash statistics */
-    private final int init_pool;    // initial visible_pool size
-    private final float bf_insert;  // balancing factor for insertions
-    private final float bf_delete;  // balancing factor for deletions
+    /* header size */
     /* Default values */
     private final int defaultKeysPerPage = 64;          // default keys per page value
     private final int initial_blk_mgr_pool_size = 32;   // default block pool size
@@ -17,18 +17,19 @@ class LinearHashConfiguration {
     private final int defaultTickThresh = 100;          // per 100 ticks reset.
     private final String fileMode = "rw";               // default mode R/W
     private final int blk_hoffset = 2 * keyByteSize;    // header offset for each block (2 * base key size)
-
-
+    private final int header_size = 40;                 // file header that has the actual configuration details.
+    private final String blk_fname; // filename of the block storage
+    /* hash statistics */
+    private int init_pool;    // initial visible_pool size
+    private float bf_insert;  // balancing factor for insertions
+    private float bf_delete;  // balancing factor for deletions
     /**
      * Block manager configuration
      */
 
     /* Properties */
-    private final int keysPerBlock; // keys per block
-    private final int bytesPerBlock;// bytes per block
-    private final String blk_fname; // filename of the block storage
-
-
+    private int keysPerBlock; // keys per block
+    private int bytesPerBlock;// bytes per block
     /**
      * Hash configuration
      */
@@ -206,7 +207,7 @@ class LinearHashConfiguration {
      *
      * @return the value (in bytes) of the block header offset
      */
-    int getBlk_hoffset() {
+    int getBlockHeaderOffset() {
         return blk_hoffset;
     }
 
@@ -246,4 +247,37 @@ class LinearHashConfiguration {
         return tick_thresh;
     }
 
+    /**
+     * Return the number of bytes that the header has.
+     *
+     * @return the size of header in bytes.
+     */
+    int getHeaderSize() {
+        return header_size;
+    }
+
+    /**
+     * Reads the header from a pre-existing file
+     *
+     * @param blk_file file to load the data from, already at the correct position
+     */
+    void readFileHeader(RandomAccessFile blk_file)
+            throws IOException {
+        /* write key per block */
+        keysPerBlock = blk_file.readInt();
+        bytesPerBlock = calculateBlockByteSize(keyByteSize, keysPerBlock);
+
+        /* write init pool */
+        init_pool = blk_file.readInt();
+
+        /* write inserts load factor */
+        bf_insert = blk_file.readFloat();
+
+        /* write delete load factor */
+        bf_delete = blk_file.readFloat();
+
+        /* write epoch thresh */
+        tick_thresh = blk_file.readInt();
+
+    }
 }

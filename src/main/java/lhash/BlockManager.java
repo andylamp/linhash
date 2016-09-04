@@ -23,7 +23,7 @@ class BlockManager {
     private LinearHashConfiguration lin_conf;   // configuration instance.
     private LinearHashPerfLog lin_perf;         // performance tracker instance.
 
-    private RandomAccessFile blk_file;
+    private RandomAccessFile blk_file;          // file pointer to binary file
 
     /**
      * Initialize the block manager using the specified configuration instance.
@@ -59,40 +59,121 @@ class BlockManager {
                 System.err.println("File " + fname + " already exists, erasing it.");
                 if (f.delete()) {
                     System.err.println("File :" + fname + " was cleared successfully.");
+                    openAndExpand(fname);
                 } else {
                     System.err.println("Encountered error while clearing contents of file: " + fname);
                     throw new IOException("Couldn't clear file contents");
                 }
             } else {
-                System.err.println("File " + fname + " already exists, opening.");
+                System.err.println("File " + fname + " already exists, opening...");
+                readFileHeader(fname);
             }
+        } else {
+            openAndExpand(fname);
         }
-        // in any case, open it.
-        blk_file = new RandomAccessFile(f, lin_conf.getFileMode());
-        // now check if the file was created now and expand it to the necessary size.
-        if (override) {
-            blk_file.setLength(0);
-            blk_file.setLength(blockOffset(poolSize));
-        }
-        // update file length
+        // update file length variables
         initFileSize = blk_file.length();
+        curFileSize = initFileSize;
         return (initFileSize);
     }
 
     /**
-     * Writes the configuration to the file header
+     * Open the block file and expand it to the correct size.
+     *
+     * @param fname filename to open
+     * @throws IOException is thrown when there is an I/O error during the operation.
      */
-    private void writeFileHeader() {
-
+    private void openAndExpand(String fname) throws IOException {
+        // in any case, open it.
+        blk_file = new RandomAccessFile(fname, lin_conf.getFileMode());
+        // now check if the file was created now and expand it to the necessary size.
+        blk_file.setLength(0L);
+        blk_file.setLength(blockOffset(poolSize));
     }
 
     /**
+     *
+     * Writes the configuration to the file header
+     *
+     * Total size: (
+     *  4 (pool size) +
+     *  4 (ovf_blocks) +
+     *  8 (fs) +
+     *  4 (keys) +
+     *  4 (keys/block) +
+     *  4 (visible pool) +
+     *  4 (inserts bf) +
+     *  4 (deletes bf) +
+     *  4 (tick thresh)
+     *  ) = 40 bytes
+     *
+     */
+    private void writeFileHeader()
+            throws IOException {
+        if (blk_file == null) {
+            throw new IOException("File is closed.");
+        }
+
+        /* seek to the beginning */
+        blk_file.seek(0L);
+
+        /* write pool size */
+        blk_file.writeInt(poolSize);
+
+        /* write overflow pool size */
+        blk_file.writeInt(ovf_blocks);
+
+        /* file size (current) */
+        blk_file.writeLong(curFileSize);
+
+        /* number of keys stored */
+        blk_file.writeInt(key_num);
+
+        /* write key per block */
+        blk_file.writeInt(lin_conf.getKeysPerBlock());
+
+        /* write init pool */
+        blk_file.writeInt(lin_conf.getInitialVisiblePoolSize());
+
+        /* write inserts load factor */
+        blk_file.writeFloat(lin_conf.getBalanceFactorForInserts());
+
+        /* write delete load factor */
+        blk_file.writeFloat(lin_conf.getBalanceFactorForDeletes());
+
+        /* write epoch thresh */
+        blk_file.writeInt(lin_conf.getTickThresh());
+    }
+
+    /**
+     *
      * Reads the header from a pre-existing file
      *
-     * @return true if header was parsed successfully, false if not.
      */
-    private boolean readFileHeader() {
-        return true;
+    private void readFileHeader(String fname)
+            throws IOException {
+        System.out.println("Reading data from header, configuration might change...");
+        /* open the file */
+        if (blk_file == null) {
+            blk_file = new RandomAccessFile(fname, lin_conf.getFileMode());
+        }
+        /* seek to the beginning */
+        blk_file.seek(0L);
+
+        /* write pool size */
+        poolSize = blk_file.readInt();
+
+        /* write overflow pool size */
+        ovf_blocks = blk_file.readInt();
+
+        /* file size (current) */
+        curFileSize = blk_file.readLong();
+
+        /* number of keys stored */
+        key_num = blk_file.readInt();
+
+        /* read configuration particulars */
+        lin_conf.readFileHeader(blk_file);
     }
 
     /**
@@ -129,7 +210,7 @@ class BlockManager {
      */
 
     private int calcPoolSize() {
-        return (lin_conf.getBytesPerBlock() * poolSize);
+        return (lin_conf.getHeaderSize() + (lin_conf.getBytesPerBlock() * poolSize));
     }
 
     /**
@@ -139,7 +220,7 @@ class BlockManager {
      * @return the actual index offset from the start of the file for the requested block.
      */
     private int offsetCalc(int offset) {
-        return ((lin_conf.getBytesPerBlock() * offset) + lin_conf.getKeyByteSize());
+        return (lin_conf.getHeaderSize() + ((lin_conf.getBytesPerBlock() * offset) + lin_conf.getKeyByteSize()));
     }
 
     /**
@@ -148,7 +229,8 @@ class BlockManager {
      * @return the actual block offset of the overflow page.
      */
     private int ovfPadCalc() {
-        return (lin_conf.getBytesPerBlock() * (poolSize + ovf_blocks));
+        return (lin_conf.getHeaderSize() +
+                (lin_conf.getBytesPerBlock() * (poolSize + ovf_blocks)));
     }
 
     /**
@@ -158,7 +240,7 @@ class BlockManager {
      * @return the actual block offset from the start of the file.
      */
     private int blockOffset(int blk_num) {
-        return (lin_conf.getBytesPerBlock() * blk_num);
+        return (lin_conf.getHeaderSize() + (lin_conf.getBytesPerBlock() * blk_num));
     }
 
     /**
@@ -231,8 +313,8 @@ class BlockManager {
      * @throws IOException is thrown when there is an I/O error during the operation.
      */
     private void addOvfBlock(int blk_num) throws IOException {
-        int ovf_blk,        // overflow block offset
-                ovf_nptr;        // overflow block next
+        int ovf_blk,    // overflow block offset
+                ovf_nptr;   // overflow block next
 
         // no overflow block present
         if ((poolSize - 1) < blk_num) {
@@ -286,7 +368,7 @@ class BlockManager {
      * @throws IOException is thrown when there is an I/O error during the operation.
      */
     int[] fetchBlock(int blk_num) throws IOException {
-        int blk_keys,    // number of keys in the block
+        int blk_keys,   // number of keys in the block
                 ovf_ptr;    // over flow block presence flag
 
         int blk_con[];    // block elements
@@ -329,11 +411,11 @@ class BlockManager {
      */
     private void deleteOvfBlock(int blk_num) throws IOException {
         int ovf_ptr,        // ovf block pointer (initial)
-                ovf_nptr,        // ovf block pointer next
-                ovf_pptr,        // ovf block pointer previous
-                ovf_cptr;        // ovf block pointer iterator
-        long shift_cnt;        // number of bytes to shift
-        byte blk_shift[];    // shift file part
+                ovf_nptr,       // ovf block pointer next
+                ovf_pptr,       // ovf block pointer previous
+                ovf_cptr;       // ovf block pointer iterator
+        long shift_cnt;     // number of bytes to shift
+        byte blk_shift[];   // shift file part
         // check if doesn't exist.
         if ((poolSize - 1) < blk_num) {
             return;
@@ -457,9 +539,9 @@ class BlockManager {
      * @throws IOException is thrown when there is an I/O error during the operation.
      */
     Integer insertKey(int val, int blk_num) throws IOException {
-        int blk_keys,    // keys in block
+        int blk_keys,   // keys in block
                 ovf_ptr,    // ovf block pointer
-                c_key;        // current key
+                c_key;      // current key
 
         // increment i/o counter
         lin_perf.incrementBothIO();
@@ -510,7 +592,7 @@ class BlockManager {
             // we need to add an overflow block
             addOvfBlock(blk_num);
             // seek to the new overflow block, plus the block header offset
-            blk_file.seek(blockOffset(poolSize + ovf_blocks - 1) + lin_conf.getBlk_hoffset());
+            blk_file.seek(blockOffset(poolSize + ovf_blocks - 1) + lin_conf.getBlockHeaderOffset());
             // finally write the value
             blk_file.writeInt(val);
 
@@ -539,13 +621,13 @@ class BlockManager {
      * @return if we were successful.
      */
     boolean deleteKey(int val, int blk_num) throws IOException {
-        int blk_keys,        // keys in block
-                ovf_ptr,        // ovf block pointer
-                c_key,            // current key
-                l_key;            // last key value
+        int blk_keys,   // keys in block
+                ovf_ptr,    // ovf block pointer
+                c_key,      // current key
+                l_key;      // last key value
 
-        long key_loc = 0L,        // key location
-                key_ploc = 0L;        // past key location
+        long key_loc = 0L,  // key location
+                key_ploc = 0L; // past key location
 
         // given block is out of range...
         if (blk_num >= poolSize) {
@@ -646,9 +728,9 @@ class BlockManager {
      * @throws IOException is thrown when there is an I/O error during the operation.
      */
     Integer fetchKey(int val, int blk_num) throws IOException {
-        int blk_keys,        // keys in block
+        int blk_keys,   // keys in block
                 ovf_ptr,    // ovf block pointer
-                c_key;        // current key
+                c_key;      // current key
 
         // given block is out of range...
         if (blk_num >= poolSize) {
@@ -778,6 +860,9 @@ class BlockManager {
      */
     void commitFile()
             throws IOException {
+        // first write the header data
+        writeFileHeader();
+        // then close.
         blk_file.close();
     }
 }
