@@ -111,11 +111,12 @@ This work is licensed under the terms and conditions of GPLv2.
 # Final notes
 
 There **was** a small "annoyance" which should be fixed (but not thoroughly 
-tested yet!); this "annoyance" when you try to reuse a file that has a 
-different configuration than the one supplied the behaviour was unpredicted.  
-The hassle-free configuration loading is implemented... fingers crossed as
-although current test suite passes; I have to put some tests cases to 
-test that specifically. Although in hand-crafted testing it's OK.
+tested yet!); this "annoyance" was that if you tried to reuse a file that 
+had a different configuration than the one supplied the behaviour was 
+unpredicted. The hassle-free configuration loading is now implemented...
+fingers crossed as although current test suite passes; I have to put 
+some tests cases to test that specifically. Although in hand-crafted 
+testing it's OK.
 
 [1]: http://www.cs.cmu.edu/~christos/courses/826-resources/PAPERS+BOOK/linear-hashing.PDF
 [2]: https://github.com/andylamp/BPlusTree 
