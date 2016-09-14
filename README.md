@@ -105,7 +105,7 @@ if(!slh.deleteKey(s)) {
 
 # License
 
-This work is licensed under the terms and conditions of GPLv2.
+This work is licensed under the terms and conditions of GPLv3.
 
 
 # Final notes
