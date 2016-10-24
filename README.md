@@ -34,13 +34,13 @@ The other way is to use the custom constructor, which enables you to tweak vario
 example of that use case is shown below:
 
 ```java
-LinearHash slh = new LinearHash("fname",         // filename
+LinearHash slh = new LinearHash("fname",        // filename
                                 keysPerBlock,   // keys per each block
-					            initial_pool,   // initial (visible) block pool
-					            ilb_2,          // insert balance factor
-					            dlb_2,          // delete balance factor
-					            true,           // override flag
-					            epoch_thresh);  // epoch threshold (for tracking)
+				initial_pool,   // initial (visible) block pool
+				ilb_2,          // insert balance factor
+				dlb_2,          // delete balance factor
+				true,           // override flag
+				epoch_thresh);  // epoch threshold (for tracking)
 ```
 
 ## Insertions
