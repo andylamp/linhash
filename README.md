@@ -1,4 +1,6 @@
 ![build logo](https://travis-ci.org/andylamp/linhash.svg?branch=master)
+![Maven](https://github.com/andylamp/linhash/workflows/Java%20CI/badge.svg)
+
 # Purely *On-Disk* Linear Hashing
 
 
